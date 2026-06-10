@@ -45,13 +45,26 @@ export async function signInWithEmail(email: string) {
   return { error };
 }
 
-// Verifica o código de 6 dígitos.
+// Verifica o código de 6 dígitos (funciona para login e para novo cadastro).
 export async function verifyOtp(email: string, token: string) {
-  const { data, error } = await supabase.auth.verifyOtp({
-    email: email,
-    token: token,
+  // Usuário já existente (login)
+  let { data, error } = await supabase.auth.verifyOtp({
+    email,
+    token,
     type: 'email',
   });
+
+  // Usuário novo (primeiro acesso) usa o tipo 'signup'
+  if (error) {
+    const retry = await supabase.auth.verifyOtp({
+      email,
+      token,
+      type: 'signup',
+    });
+    data = retry.data;
+    error = retry.error;
+  }
+
   return { data, error };
 }
 
