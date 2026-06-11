@@ -329,7 +329,6 @@ export default function DashboardPage() {
                   <li>Acertar se vai ter pênalti</li>
                   <li>Acertar se vai ter cartão vermelho</li>
                   <li>Acertar quem dá o pontapé inicial</li>
-                  <li>Por fim, o palpite mais antigo</li>
                 </ol>
               </section>
 
