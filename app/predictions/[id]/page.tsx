@@ -11,9 +11,7 @@ interface Match {
   team_b: string;
 }
 
-// Ordena os buckets de gols: '5+' -> 5, '3+' -> 3, senão o número.
 const goalRank = (b: string) => (b === '5+' ? 5 : b === '3+' ? 3 : parseInt(b, 10));
-// Ordena as faixas de amarelos: 0-2 < 3-4 < 5+
 const yellowRank = (r: string) => (r === '0-2' ? 0 : r === '3-4' ? 1 : 2);
 const boolRank = (v: boolean) => (v ? 1 : 0);
 const koRank = (s: string) => (s === 'A' ? 0 : 1);
@@ -23,6 +21,7 @@ export default function AllPredictionsPage() {
   const matchId = params.id as string;
   const [match, setMatch] = useState<Match | null>(null);
   const [rows, setRows] = useState<any[]>([]);
+  const [isAdmin, setIsAdmin] = useState(false);
   const [loading, setLoading] = useState(true);
   const router = useRouter();
 
@@ -36,6 +35,13 @@ export default function AllPredictionsPage() {
       router.push('/');
       return;
     }
+
+    const { data: me } = await supabase
+      .from('users')
+      .select('is_admin')
+      .eq('id', session.user.id)
+      .single();
+    setIsAdmin(me?.is_admin || false);
 
     const { data: matchData } = await supabase
       .from('matches')
@@ -56,8 +62,6 @@ export default function AllPredictionsPage() {
       name: users?.find((u) => u.id === p.user_id)?.name || 'Anônimo',
     }));
 
-    // Ordem crescente: gols final A, gols final B, gols 1º tempo A, gols 1º tempo B,
-    // cartões amarelos, pênalti, cartão vermelho, pontapé inicial (Time A antes do Time B).
     merged.sort(
       (a, b) =>
         goalRank(a.pred_final_team_a_goals) - goalRank(b.pred_final_team_a_goals) ||
@@ -74,11 +78,35 @@ export default function AllPredictionsPage() {
     setLoading(false);
   };
 
+  const toggleValidated = async (row: any) => {
+    const newVal = !row.validated;
+    const { error } = await supabase
+      .from('predictions')
+      .update({ validated: newVal })
+      .eq('id', row.id);
+    if (error) {
+      alert('Erro: ' + error.message);
+      return;
+    }
+    setRows((rs) => rs.map((r) => (r.id === row.id ? { ...r, validated: newVal } : r)));
+  };
+
+  const deleteRow = async (row: any) => {
+    if (!window.confirm(`Apagar o palpite de ${row.name}? Esta ação não pode ser desfeita.`)) return;
+    const { error } = await supabase.from('predictions').delete().eq('id', row.id);
+    if (error) {
+      alert('Erro: ' + error.message);
+      return;
+    }
+    setRows((rs) => rs.filter((r) => r.id !== row.id));
+  };
+
   if (loading) return <div className="flex justify-center items-center h-screen">Carregando...</div>;
   if (!match) return <div className="flex justify-center items-center h-screen">Jogo não encontrado</div>;
 
   const possessionName = (side: string) => (side === 'B' ? match.team_b : match.team_a);
   const yesNo = (v: boolean) => (v ? 'Sim' : 'Não');
+  const colCount = isAdmin ? 9 : 8;
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -107,12 +135,14 @@ export default function AllPredictionsPage() {
                 <th className="px-4 py-3 text-center font-semibold">Pênalti</th>
                 <th className="px-4 py-3 text-center font-semibold">Vermelho</th>
                 <th className="px-4 py-3 text-center font-semibold">Pontapé</th>
+                <th className="px-4 py-3 text-center font-semibold">Validado</th>
+                {isAdmin && <th className="px-4 py-3 text-center font-semibold">Ações</th>}
               </tr>
             </thead>
             <tbody>
               {rows.length === 0 ? (
                 <tr>
-                  <td colSpan={7} className="px-4 py-8 text-center text-gray-500">
+                  <td colSpan={colCount} className="px-4 py-8 text-center text-gray-500">
                     Nenhum palpite ainda
                   </td>
                 </tr>
@@ -130,6 +160,37 @@ export default function AllPredictionsPage() {
                     <td className="px-4 py-3 text-center">{yesNo(r.pred_penalty_kicks)}</td>
                     <td className="px-4 py-3 text-center">{yesNo(r.pred_red_card)}</td>
                     <td className="px-4 py-3 text-center">{possessionName(r.pred_starting_possession)}</td>
+                    <td className="px-4 py-3 text-center">
+                      {r.validated ? (
+                        <span className="inline-block bg-green-100 text-green-700 px-2 py-1 rounded-full text-xs font-semibold">
+                          Pago
+                        </span>
+                      ) : (
+                        <span className="inline-block bg-gray-100 text-gray-500 px-2 py-1 rounded-full text-xs">
+                          Pendente
+                        </span>
+                      )}
+                    </td>
+                    {isAdmin && (
+                      <td className="px-4 py-3">
+                        <div className="flex gap-2 justify-center">
+                          <button
+                            onClick={() => toggleValidated(r)}
+                            className={`px-3 py-1 rounded text-xs font-semibold text-white ${
+                              r.validated ? 'bg-yellow-600 hover:bg-yellow-700' : 'bg-green-600 hover:bg-green-700'
+                            }`}
+                          >
+                            {r.validated ? 'Cancelar' : 'Validar'}
+                          </button>
+                          <button
+                            onClick={() => deleteRow(r)}
+                            className="px-3 py-1 rounded text-xs font-semibold text-white bg-red-600 hover:bg-red-700"
+                          >
+                            Apagar
+                          </button>
+                        </div>
+                      </td>
+                    )}
                   </tr>
                 ))
               )}

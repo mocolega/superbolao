@@ -342,6 +342,17 @@ export default function DashboardPage() {
               </section>
             </div>
 
+            
+              <section>
+                <h3 className="font-semibold text-gray-900 mb-2">Valor da aposta</h3>
+                <ol className="list-decimal list-inside space-y-1 text-sm">
+                  <li>Valor da aposta por jogo: <strong>R$ 20,00</strong></li>
+                  <li>Caso ocorra empate entre dois apostadores na primeira colocação, o total de 90% do prêmio será dividido igualmente entre eles, e o restante (10%) será destinado ao terceiro colocado. Não haverá segundo colocado nesse cenário.</li>
+                  <li>Caso ocorra empate de três ou mais apostadores na primeira colocação, o total de 100% do prêmio será dividido igualmente entre eles, e não haverá segundo ou terceiro colocado.</li>
+                  <li>O mesmo vale para empates entre dois ou mais apostadores para a segunda e terceira colocação.</li>
+                </ol>
+              </section>
+
             <div className="px-6 py-4 border-t sticky bottom-0 bg-white">
               <button
                 onClick={() => setShowRules(false)}
