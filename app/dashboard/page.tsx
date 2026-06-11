@@ -255,7 +255,7 @@ export default function DashboardPage() {
                 )}
 
                 <Link href={`/predictions/${match.id}`}>
-                  <button className="w-full mt-2 text-sm text-blue-600 hover:text-blue-800">
+                  <button className="w-full mt-2 bg-gray-600 text-white px-4 py-2 rounded hover:bg-gray-700">
                     Ver todos os palpites
                   </button>
                 </Link>
@@ -329,6 +329,7 @@ export default function DashboardPage() {
                   <li>Acertar se vai ter pênalti</li>
                   <li>Acertar se vai ter cartão vermelho</li>
                   <li>Acertar quem dá o pontapé inicial</li>
+                  <li>Por fim, o palpite mais antigo</li>
                 </ol>
               </section>
 

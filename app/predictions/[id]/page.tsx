@@ -11,6 +11,13 @@ interface Match {
   team_b: string;
 }
 
+// Ordena os buckets de gols: '5+' -> 5, '3+' -> 3, senão o número.
+const goalRank = (b: string) => (b === '5+' ? 5 : b === '3+' ? 3 : parseInt(b, 10));
+// Ordena as faixas de amarelos: 0-2 < 3-4 < 5+
+const yellowRank = (r: string) => (r === '0-2' ? 0 : r === '3-4' ? 1 : 2);
+const boolRank = (v: boolean) => (v ? 1 : 0);
+const koRank = (s: string) => (s === 'A' ? 0 : 1);
+
 export default function AllPredictionsPage() {
   const params = useParams();
   const matchId = params.id as string;
@@ -40,8 +47,7 @@ export default function AllPredictionsPage() {
     const { data: preds } = await supabase
       .from('predictions')
       .select('*')
-      .eq('match_id', matchId)
-      .order('submitted_at', { ascending: true });
+      .eq('match_id', matchId);
 
     const { data: users } = await supabase.from('users').select('id, name');
 
@@ -50,6 +56,20 @@ export default function AllPredictionsPage() {
       name: users?.find((u) => u.id === p.user_id)?.name || 'Anônimo',
     }));
 
+    // Ordem crescente: gols final A, gols final B, gols 1º tempo A, gols 1º tempo B,
+    // cartões amarelos, pênalti, cartão vermelho, pontapé inicial (Time A antes do Time B).
+    merged.sort(
+      (a, b) =>
+        goalRank(a.pred_final_team_a_goals) - goalRank(b.pred_final_team_a_goals) ||
+        goalRank(a.pred_final_team_b_goals) - goalRank(b.pred_final_team_b_goals) ||
+        goalRank(a.pred_halftime_team_a_goals) - goalRank(b.pred_halftime_team_a_goals) ||
+        goalRank(a.pred_halftime_team_b_goals) - goalRank(b.pred_halftime_team_b_goals) ||
+        yellowRank(a.pred_yellow_cards_range) - yellowRank(b.pred_yellow_cards_range) ||
+        boolRank(a.pred_penalty_kicks) - boolRank(b.pred_penalty_kicks) ||
+        boolRank(a.pred_red_card) - boolRank(b.pred_red_card) ||
+        koRank(a.pred_starting_possession) - koRank(b.pred_starting_possession)
+    );
+
     setRows(merged);
     setLoading(false);
   };
@@ -57,7 +77,6 @@ export default function AllPredictionsPage() {
   if (loading) return <div className="flex justify-center items-center h-screen">Carregando...</div>;
   if (!match) return <div className="flex justify-center items-center h-screen">Jogo não encontrado</div>;
 
-  // Show which team a player picked to kick off.
   const possessionName = (side: string) => (side === 'B' ? match.team_b : match.team_a);
   const yesNo = (v: boolean) => (v ? 'Sim' : 'Não');
 
@@ -84,9 +103,9 @@ export default function AllPredictionsPage() {
                 <th className="px-4 py-3 text-left font-semibold">Jogador</th>
                 <th className="px-4 py-3 text-center font-semibold">Final</th>
                 <th className="px-4 py-3 text-center font-semibold">1º tempo</th>
+                <th className="px-4 py-3 text-center font-semibold">Amarelos</th>
                 <th className="px-4 py-3 text-center font-semibold">Pênalti</th>
                 <th className="px-4 py-3 text-center font-semibold">Vermelho</th>
-                <th className="px-4 py-3 text-center font-semibold">Amarelos</th>
                 <th className="px-4 py-3 text-center font-semibold">Pontapé</th>
               </tr>
             </thead>
@@ -107,9 +126,9 @@ export default function AllPredictionsPage() {
                     <td className="px-4 py-3 text-center">
                       {r.pred_halftime_team_a_goals} - {r.pred_halftime_team_b_goals}
                     </td>
+                    <td className="px-4 py-3 text-center">{r.pred_yellow_cards_range}</td>
                     <td className="px-4 py-3 text-center">{yesNo(r.pred_penalty_kicks)}</td>
                     <td className="px-4 py-3 text-center">{yesNo(r.pred_red_card)}</td>
-                    <td className="px-4 py-3 text-center">{r.pred_yellow_cards_range}</td>
                     <td className="px-4 py-3 text-center">{possessionName(r.pred_starting_possession)}</td>
                   </tr>
                 ))
