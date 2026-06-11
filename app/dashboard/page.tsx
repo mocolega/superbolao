@@ -28,6 +28,8 @@ export default function DashboardPage() {
   const [savingName, setSavingName] = useState(false);
   const [nameMessage, setNameMessage] = useState('');
 
+  const [showRules, setShowRules] = useState(false);
+
   const router = useRouter();
 
   useEffect(() => {
@@ -138,6 +140,12 @@ export default function DashboardPage() {
           <div className="flex items-center gap-4">
             <span className="text-gray-700">{myName}</span>
             {isAdmin && <span className="bg-red-500 text-white px-3 py-1 rounded-full text-sm font-semibold">Admin</span>}
+            <button
+              onClick={() => setShowRules(true)}
+              className="bg-white border border-gray-300 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-50"
+            >
+              Regras
+            </button>
             <button onClick={handleLogout} className="bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700">
               Sair
             </button>
@@ -261,6 +269,91 @@ export default function DashboardPage() {
           })}
         </div>
       </main>
+
+      {/* Modal de regras */}
+      {showRules && (
+        <div
+          className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50"
+          onClick={() => setShowRules(false)}
+        >
+          <div
+            className="bg-white rounded-lg shadow-xl max-w-lg w-full max-h-[85vh] overflow-y-auto"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex justify-between items-center px-6 py-4 border-b sticky top-0 bg-white">
+              <h2 className="text-xl font-bold">📋 Regras do Super Bolão da Copa</h2>
+              <button
+                onClick={() => setShowRules(false)}
+                className="text-gray-400 hover:text-gray-700 text-2xl leading-none"
+                aria-label="Fechar"
+              >
+                ×
+              </button>
+            </div>
+
+            <div className="px-6 py-5 space-y-6 text-gray-700">
+              <section>
+                <h3 className="font-semibold text-gray-900 mb-2">Como funciona</h3>
+                <ul className="list-disc list-inside space-y-1 text-sm">
+                  <li>Em cada jogo você dá um palpite único — não é permitido repetir exatamente o mesmo palpite de outra pessoa no mesmo jogo. Quem registrar primeiro garante a combinação.</li>
+                  <li>Os palpites fecham 30 minutos antes do início de cada jogo (horário de Brasília).</li>
+                  <li>Cada jogo tem a sua própria classificação.</li>
+                </ul>
+              </section>
+
+              <section>
+                <h3 className="font-semibold text-gray-900 mb-2">Pontuação — Placar final</h3>
+                <ul className="list-disc list-inside space-y-1 text-sm">
+                  <li>Acertar o resultado (vitória ou empate): <strong>30 pontos</strong></li>
+                  <li>Acertar os gols do primeiro time: <strong>10 pontos</strong></li>
+                  <li>Acertar os gols do segundo time: <strong>10 pontos</strong></li>
+                </ul>
+              </section>
+
+              <section>
+                <h3 className="font-semibold text-gray-900 mb-2">Pontuação — Primeiro tempo</h3>
+                <p className="text-sm mb-2">Mesma pontuação do placar final:</p>
+                <ul className="list-disc list-inside space-y-1 text-sm">
+                  <li>Acertar o resultado: <strong>30 pontos</strong></li>
+                  <li>Acertar os gols do primeiro time: <strong>10 pontos</strong></li>
+                  <li>Acertar os gols do segundo time: <strong>10 pontos</strong></li>
+                </ul>
+              </section>
+
+              <section>
+                <h3 className="font-semibold text-gray-900 mb-2">Critérios de desempate (nesta ordem)</h3>
+                <ol className="list-decimal list-inside space-y-1 text-sm">
+                  <li>Pontos do placar final</li>
+                  <li>Pontos do primeiro tempo</li>
+                  <li>Acertar o total de cartões amarelos</li>
+                  <li>Acertar se vai ter pênalti</li>
+                  <li>Acertar se vai ter cartão vermelho</li>
+                  <li>Acertar quem dá o pontapé inicial</li>
+                  <li>Por fim, o palpite mais antigo</li>
+                </ol>
+              </section>
+
+              <section>
+                <h3 className="font-semibold text-gray-900 mb-2">🏆 Premiação</h3>
+                <ul className="space-y-1 text-sm">
+                  <li>🥇 1º lugar: <strong>70%</strong> do prêmio</li>
+                  <li>🥈 2º lugar: <strong>20%</strong> do prêmio</li>
+                  <li>🥉 3º lugar: <strong>10%</strong> do prêmio</li>
+                </ul>
+              </section>
+            </div>
+
+            <div className="px-6 py-4 border-t sticky bottom-0 bg-white">
+              <button
+                onClick={() => setShowRules(false)}
+                className="w-full bg-blue-600 text-white py-2 rounded-lg font-semibold hover:bg-blue-700"
+              >
+                Fechar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
