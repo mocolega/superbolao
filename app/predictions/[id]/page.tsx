@@ -4,6 +4,8 @@ import { useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabase';
 import { useRouter, useParams } from 'next/navigation';
 import Link from 'next/link';
+import { jsPDF } from 'jspdf';
+import { autoTable } from 'jspdf-autotable';
 
 interface Match {
   id: string;
@@ -101,6 +103,38 @@ export default function AllPredictionsPage() {
     setRows((rs) => rs.filter((r) => r.id !== row.id));
   };
 
+  const downloadPdf = () => {
+    if (!match) return;
+    const yesNo = (v: boolean) => (v ? 'Sim' : 'Não');
+    const possession = (side: string) => (side === 'B' ? match.team_b : match.team_a);
+
+    const doc = new jsPDF();
+    doc.setFontSize(14);
+    doc.text(`Palpites — ${match.team_a} x ${match.team_b}`, 14, 16);
+    doc.setFontSize(9);
+    doc.text(`Final e 1º tempo no formato ${match.team_a} - ${match.team_b}`, 14, 22);
+
+    autoTable(doc, {
+      startY: 26,
+      styles: { fontSize: 8 },
+      headStyles: { fillColor: [37, 99, 235] },
+      head: [['Jogador', 'Final', '1º tempo', 'Amarelos', 'Pênalti', 'Vermelho', 'Pontapé', 'Validado']],
+      body: rows.map((r) => [
+        r.name,
+        `${r.pred_final_team_a_goals} - ${r.pred_final_team_b_goals}`,
+        `${r.pred_halftime_team_a_goals} - ${r.pred_halftime_team_b_goals}`,
+        r.pred_yellow_cards_range,
+        yesNo(r.pred_penalty_kicks),
+        yesNo(r.pred_red_card),
+        possession(r.pred_starting_possession),
+        r.validated ? 'Pago' : 'Pendente',
+      ]),
+    });
+
+    const safeName = `${match.team_a}-x-${match.team_b}`.replace(/[^a-zA-Z0-9-]/g, '_');
+    doc.save(`palpites-${safeName}.pdf`);
+  };
+
   if (loading) return <div className="flex justify-center items-center h-screen">Carregando...</div>;
   if (!match) return <div className="flex justify-center items-center h-screen">Jogo não encontrado</div>;
 
@@ -122,7 +156,17 @@ export default function AllPredictionsPage() {
         <h1 className="text-3xl font-bold mb-2">
           Todos os palpites — {match.team_a} x {match.team_b}
         </h1>
-        <p className="text-gray-600 mb-8">{rows.length} palpite(s) até agora</p>
+        <div className="flex items-center justify-between mb-8">
+          <p className="text-gray-600">{rows.length} palpite(s) até agora</p>
+          {rows.length > 0 && (
+            <button
+              onClick={downloadPdf}
+              className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 text-sm font-semibold"
+            >
+              Baixar PDF
+            </button>
+          )}
+        </div>
 
         <div className="bg-white rounded-lg shadow-md overflow-x-auto">
           <table className="w-full text-sm">
